@@ -43,6 +43,7 @@ class MetaFrontierEngine:
         or continuous data (yi, sei).
         """
         self._lazy_init()
+        logger.info("%s: evaluating", self.name)
 
         if self._import_error is not None:
             return {

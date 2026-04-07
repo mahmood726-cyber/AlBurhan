@@ -8,7 +8,10 @@ Computes from actual study data:
   4. Redundancy: proportion of total variance due to between-study heterogeneity
 """
 
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class SynthesisLossEngine:
@@ -17,6 +20,7 @@ class SynthesisLossEngine:
     def evaluate(self, claim_data):
         yi = np.array(claim_data.get('yi', []), dtype=float)
         sei = np.array(claim_data.get('sei', []), dtype=float)
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         n_per_study = claim_data.get('n_per_study')
 
         k = len(yi)

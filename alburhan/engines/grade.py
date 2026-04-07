@@ -15,6 +15,10 @@ Starting certainty = 4 (HIGH). Subtract total downgrades.
 Score map: 4=HIGH, 3=MODERATE, 2=LOW, <=1=VERY LOW.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 _CERTAINTY_MAP = {4: "HIGH", 3: "MODERATE", 2: "LOW", 1: "VERY LOW", 0: "VERY LOW"}
 
 
@@ -23,6 +27,7 @@ class GRADEEngine:
 
     def evaluate(self, claim_data):
         results = claim_data.get("audit_results", {})
+        logger.info("%s: evaluating %d upstream engines", self.name, len(results))
 
         rob, rob_reason = self._risk_of_bias(results)
         inc, inc_reason = self._inconsistency(results)

@@ -1,4 +1,8 @@
-﻿import numpy as np
+﻿import logging
+import numpy as np
+
+logger = logging.getLogger(__name__)
+
 
 class EvidenceDriftEngine:
     name = "EvidenceDrift"
@@ -9,6 +13,7 @@ class EvidenceDriftEngine:
         Checks if newer studies contradict older ones.
         """
         yi = np.array(claim_data.get('yi', []))
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         years = np.array(claim_data.get('years', []))
 
         if len(yi) < 4:

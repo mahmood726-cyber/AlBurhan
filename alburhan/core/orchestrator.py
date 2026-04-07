@@ -29,8 +29,8 @@ ENGINE_DEPS: Dict[str, List[str]] = {
     "AfricaRCT": ["PredictionGap"],
     "CausalSynth": ["MetaFrontierLab", "PredictionGap"],
     "SynthesisLoss": ["Al-Mizan"],
-    "GRADE": [],  # Depends on all prior engines (handled by position)
-    "E156": [],  # E156 depends on ALL others; handled specially
+    "GRADE": ["PredictionGap", "FragilityAtlas", "RegistryForensics", "NetworkMeta", "AfricaRCT", "PubBias"],
+    "E156": ["PredictionGap", "MetaFrontierLab", "FragilityAtlas", "CausalSynth", "RegistryForensics", "NetworkMeta", "SynthesisLoss", "BayesianMA", "PubBias", "GRADE"],
 }
 
 

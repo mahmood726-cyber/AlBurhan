@@ -14,8 +14,11 @@ Requires claim_data to contain:
   - "doses" : list of dose levels per study  (if absent → status="skipped")
 """
 
+import logging
 import math
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class DoseResponseEngine:
@@ -26,6 +29,7 @@ class DoseResponseEngine:
     # ------------------------------------------------------------------ #
 
     def evaluate(self, claim_data):
+        logger.info("%s: evaluating dose-response", self.name)
         doses = claim_data.get("doses")
         if doses is None:
             return {"status": "skipped", "message": "No 'doses' key in claim_data."}

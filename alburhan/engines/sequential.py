@@ -39,6 +39,7 @@ class SequentialTSAEngine:
         """
         yi = np.array(claim_data.get("yi", []), dtype=float)
         sei = np.array(claim_data.get("sei", []), dtype=float)
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         years = list(claim_data.get("years", []))
         n_per_study = claim_data.get("n_per_study", None)
         alpha = float(claim_data.get("alpha", 0.05))
@@ -183,8 +184,13 @@ class SequentialTSAEngine:
         """
         Heterogeneity-adjusted Required Information Size.
 
-        RIS = (z_alpha + z_beta)^2 / delta^2 * pooled_variance * (1 + D2)
+        Uses the actual meta-analytic variance:
+          FE: var_pooled = 1/sum(1/sei^2)
+          RE: var_pooled = 1/sum(1/(sei^2 + tau2))
+
+        RIS = (z_alpha + z_beta)^2 * var_pooled / delta^2 * (1 + D2)
         D2 = min(I2/(1-I2), 10)
+        delta = observed pooled effect (actual target)
         """
         z_alpha = stats.norm.ppf(1.0 - alpha / 2.0)
         z_beta = stats.norm.ppf(power)
@@ -196,14 +202,17 @@ class SequentialTSAEngine:
         C = float(np.sum(wi) - np.sum(wi ** 2) / np.sum(wi))
         tau2 = max(0.0, (Q - (k - 1)) / C) if C > 0 else 0.0
 
+        # RE weights and pooled estimate
         wi_re = 1.0 / (sei_s ** 2 + tau2)
         theta = float(np.sum(wi_re * yi_s) / np.sum(wi_re))
-        se_pooled = float(1.0 / math.sqrt(np.sum(wi_re)))
 
-        pooled_var = se_pooled ** 2 * k
+        # Actual meta-analytic variance (RE): 1/sum_weights
+        var_pooled = float(1.0 / np.sum(wi_re))
+
+        # Target delta: use the observed pooled effect size
         delta = abs(theta) if abs(theta) > 1e-6 else 0.1
 
-        ris_base = (z_alpha + z_beta) ** 2 * pooled_var / (delta ** 2)
+        ris_base = (z_alpha + z_beta) ** 2 * var_pooled / (delta ** 2)
         ris_base = max(ris_base, 50.0)
 
         # Heterogeneity correction

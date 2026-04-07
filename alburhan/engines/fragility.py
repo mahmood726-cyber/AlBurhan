@@ -1,6 +1,10 @@
-﻿import numpy as np
+﻿import logging
+import numpy as np
 from scipy import stats
 from scipy.optimize import minimize_scalar, brentq
+
+logger = logging.getLogger(__name__)
+
 
 class FragilityEngine:
     name = "FragilityAtlas"
@@ -14,6 +18,7 @@ class FragilityEngine:
         = 10 unique specifications.
         """
         yi = np.array(claim_data.get('yi', []))
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         sei = np.array(claim_data.get('sei', []))
 
         if len(yi) < 3:

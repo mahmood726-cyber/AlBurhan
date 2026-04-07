@@ -37,6 +37,7 @@ class AlMizanEngine:
         """
         yi = np.array(claim_data.get('yi', []))
         sei = np.array(claim_data.get('sei', []))
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         years = claim_data.get('years', [])
         condition = claim_data.get('condition', 'Unknown')
         n_per_study = claim_data.get('n_per_study', None)

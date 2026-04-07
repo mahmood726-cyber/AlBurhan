@@ -22,8 +22,11 @@ Bayes Factor (H0: mu=0 vs H1: mu≠0) via Savage-Dickey density ratio:
 Evidence classification: Kass & Raftery (1995).
 """
 
+import logging
 import numpy as np
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class BayesianMAEngine:
@@ -32,7 +35,7 @@ class BayesianMAEngine:
     # Grid settings
     _LOG_TAU2_MIN = -10.0
     _LOG_TAU2_MAX = 5.0
-    _N_GRID = 500
+    _N_GRID = 800
 
     # Prior parameters
     _MU_PRIOR_MEAN = 0.0
@@ -47,6 +50,7 @@ class BayesianMAEngine:
         yi = np.array(claim_data.get("yi", []), dtype=float)
         sei = np.array(claim_data.get("sei", []), dtype=float)
         k = len(yi)
+        logger.info("%s: evaluating k=%d studies", self.name, k)
 
         if k < 3:
             return {
@@ -54,58 +58,36 @@ class BayesianMAEngine:
                 "message": "Need k>=3 for Bayesian MA (grid approximation).",
             }
 
-        # --- Grid over log(tau2) ---
+        # --- Grid over log(tau2) --- (vectorized over grid points)
         log_tau2_grid = np.linspace(self._LOG_TAU2_MIN, self._LOG_TAU2_MAX, self._N_GRID)
         tau2_grid = np.exp(log_tau2_grid)
 
-        log_marg_post = np.zeros(self._N_GRID)
-        # Store conditional posterior params for each grid point
-        cond_mu_mean = np.zeros(self._N_GRID)
-        cond_mu_var = np.zeros(self._N_GRID)
+        V0 = self._MU_PRIOR_VAR
+        mu0 = self._MU_PRIOR_MEAN
+        s = self._TAU_HC_SCALE
 
-        for i, tau2 in enumerate(tau2_grid):
-            vi = sei**2 + tau2
-            # Conjugate update: mu | data, tau2 ~ N(mu_n, V_n)
-            # Prior: mu ~ N(mu0, V0)
-            V0 = self._MU_PRIOR_VAR
-            mu0 = self._MU_PRIOR_MEAN
-            precision_prior = 1.0 / V0
-            precision_data = np.sum(1.0 / vi)
-            V_n = 1.0 / (precision_prior + precision_data)
-            mu_n = V_n * (mu0 / V0 + np.sum(yi / vi))
-            cond_mu_mean[i] = mu_n
-            cond_mu_var[i] = V_n
+        # vi_matrix: shape (n_grid, k) — each row is sei^2 + tau2[j]
+        vi_matrix = sei**2 + tau2_grid[:, np.newaxis]  # broadcasting
 
-            # Log marginal likelihood: integrate out mu analytically
-            # p(data | tau2) = integral p(data | mu, tau2) p(mu) dmu
-            # = prod_i N(yi; mu, vi) * N(mu; mu0, V0)  integrated over mu
-            # Residual variance of yi around mu0 in the marginal:
-            #   Var(yi - yj | tau2) involves the joint distribution
-            # Standard conjugate result:
-            #   log p(data | tau2) = -0.5 * [sum log(vi) + log(V0 * sum(1/vi) + 1)
-            #                         + (yi - mu0)^T * [diag(vi) + mu0*11^T*V0]^{-1} * (yi-mu0)]
-            # Using the Woodbury / matrix-determinant lemma for scalar rank-1 update:
-            # More directly: marginal covariance is diag(vi) + V0 * 11^T
-            # log det = sum log(vi) + log(1 + V0 * sum(1/vi))
-            # quadratic form = sum((yi-mu0)^2/vi) - V_n/V0^2 * (sum((yi-mu0)/vi))^2 * V0^2
-            # Simplified:
-            r = yi - mu0
-            sum_r_over_vi = np.sum(r / vi)
-            log_det = np.sum(np.log(vi)) + np.log(V0 * precision_data + 1.0)
-            quad = np.sum(r**2 / vi) - V_n * sum_r_over_vi**2
-            log_marg_lik = -0.5 * (k * np.log(2 * np.pi) + log_det + quad)
+        # Conjugate update: mu | data, tau2 ~ N(mu_n, V_n)
+        precision_data = np.sum(1.0 / vi_matrix, axis=1)        # shape (n_grid,)
+        cond_mu_var = 1.0 / (1.0 / V0 + precision_data)         # shape (n_grid,)
+        cond_mu_mean = cond_mu_var * (mu0 / V0 + np.sum(yi / vi_matrix, axis=1))
 
-            # Log prior on tau: HalfCauchy(scale=s) → p(tau) = 2/(pi*s*(1+(tau/s)^2))
-            # tau = sqrt(tau2), dtau/dtau2 = 1/(2*sqrt(tau2))
-            # log p(tau2) = log p(tau) + log|dtau/dtau2|
-            #             = log(2) - log(pi*s) - log(1+(tau2/s^2)) - 0.5*log(tau2)
-            tau = np.sqrt(tau2)
-            s = self._TAU_HC_SCALE
-            log_prior_tau2 = (np.log(2.0) - np.log(np.pi * s)
-                              - np.log(1.0 + (tau / s)**2)
-                              - 0.5 * np.log(tau2))
+        # Log marginal likelihood (vectorized)
+        r = yi - mu0  # shape (k,)
+        sum_r_over_vi = np.sum(r / vi_matrix, axis=1)            # shape (n_grid,)
+        log_det = np.sum(np.log(vi_matrix), axis=1) + np.log(V0 * precision_data + 1.0)
+        quad = np.sum(r**2 / vi_matrix, axis=1) - cond_mu_var * sum_r_over_vi**2
+        log_marg_lik = -0.5 * (k * np.log(2 * np.pi) + log_det + quad)
 
-            log_marg_post[i] = log_marg_lik + log_prior_tau2
+        # Log prior on tau2: HalfCauchy(scale=s) on tau, Jacobian for tau2
+        tau_grid = np.sqrt(tau2_grid)
+        log_prior_tau2 = (np.log(2.0) - np.log(np.pi * s)
+                          - np.log(1.0 + (tau_grid / s)**2)
+                          - 0.5 * log_tau2_grid)
+
+        log_marg_post = log_marg_lik + log_prior_tau2
 
         # Normalize in log space → weights for tau2 grid
         log_marg_post -= np.max(log_marg_post)  # numerical stability

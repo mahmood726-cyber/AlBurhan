@@ -1,6 +1,10 @@
-﻿import math
+﻿import logging
+import math
 import numpy as np
 from scipy import stats
+
+logger = logging.getLogger(__name__)
+
 
 class PredictionGapEngine:
     name = "PredictionGap"
@@ -11,6 +15,7 @@ class PredictionGapEngine:
         claim_data should contain 'yi' (effect sizes) and 'sei' (standard errors).
         """
         yi = np.array(claim_data.get('yi', []))
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         sei = np.array(claim_data.get('sei', []))
         
         if len(yi) < 3:

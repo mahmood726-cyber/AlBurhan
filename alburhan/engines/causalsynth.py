@@ -1,4 +1,8 @@
-﻿import numpy as np
+﻿import logging
+import numpy as np
+
+logger = logging.getLogger(__name__)
+
 
 class CausalSynthEngine:
     name = "CausalSynth"
@@ -12,6 +16,7 @@ class CausalSynthEngine:
         Reports both point-estimate E-value and CI-based E-value (STAT-P0-5).
         Returns status="skipped" if no valid theta available (STAT-P1-3).
         """
+        logger.info("%s: evaluating causal sensitivity", self.name)
         theta = claim_data.get('theta', None)
         se = claim_data.get('se', None)
 

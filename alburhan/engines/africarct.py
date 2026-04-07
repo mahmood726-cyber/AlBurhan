@@ -8,7 +8,10 @@ Computes from actual study data:
   3. Effect heterogeneity decomposition for transportability assessment
 """
 
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 # GBD 2019 top-10 causes of DALYs — published reference data
@@ -39,6 +42,7 @@ class AfricaRCTEngine:
         yi = np.array(claim_data.get('yi', []), dtype=float)
         sei = np.array(claim_data.get('sei', []), dtype=float)
         country = claim_data.get('country', 'Unknown')
+        logger.info("%s: evaluating k=%d studies for %s", self.name, len(yi), country)
         condition = claim_data.get('condition', 'Unknown')
         theta = claim_data.get('theta')
 

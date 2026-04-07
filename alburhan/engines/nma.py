@@ -10,8 +10,11 @@ is not possible. This engine performs what IS computable from pairwise data:
   4. Heterogeneity influence: each study's contribution to Q
 """
 
+import logging
 import numpy as np
 from scipy import stats as sp_stats
+
+logger = logging.getLogger(__name__)
 
 
 class NetworkMetaEngine:
@@ -20,6 +23,7 @@ class NetworkMetaEngine:
     def evaluate(self, claim_data):
         yi = np.array(claim_data.get('yi', []), dtype=float)
         sei = np.array(claim_data.get('sei', []), dtype=float)
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
 
         k = len(yi)
         if k < 3:

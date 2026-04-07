@@ -8,8 +8,11 @@ Robust Meta-Analysis Engine — 3 outlier-resistant estimators.
 Each method returns: theta, se, tau2, ci_lo, ci_hi (95% Wald CI).
 """
 
+import logging
 import numpy as np
 from scipy.optimize import brentq
+
+logger = logging.getLogger(__name__)
 
 
 class RobustMAEngine:
@@ -19,6 +22,7 @@ class RobustMAEngine:
         yi = np.array(claim_data.get("yi", []), dtype=float)
         sei = np.array(claim_data.get("sei", []), dtype=float)
         k = len(yi)
+        logger.info("%s: evaluating k=%d studies", self.name, k)
 
         if k < 3:
             return {

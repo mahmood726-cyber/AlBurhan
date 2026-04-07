@@ -14,8 +14,11 @@ Steps:
   7. F-test (Knapp-Hartung): F = (b1/se_b1)^2, df1=1, df2=k-2.
 """
 
+import logging
 import numpy as np
 from scipy.stats import f as f_dist
+
+logger = logging.getLogger(__name__)
 
 
 class MetaRegressionEngine:
@@ -24,6 +27,7 @@ class MetaRegressionEngine:
     def evaluate(self, claim_data):
         yi = np.array(claim_data.get("yi", []), dtype=float)
         sei = np.array(claim_data.get("sei", []), dtype=float)
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         covariate = claim_data.get("years")
 
         # Require covariate

@@ -4,12 +4,17 @@ E156 Micro-Paper Emitter — compresses multi-engine audit into 7-sentence forma
 All values are derived from upstream engines that compute from real data.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class E156Emitter:
     name = "E156"
 
     def evaluate(self, claim_data):
         results = claim_data.get('audit_results', {})
+        logger.info("%s: emitting from %d upstream engines", self.name, len(results))
         country = claim_data.get('country', 'the target region')
         condition = claim_data.get('condition', 'the condition')
 

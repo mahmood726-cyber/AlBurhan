@@ -8,8 +8,11 @@ Computes from actual study data:
   4. Maturity index: information saturation measure
 """
 
+import logging
 import numpy as np
 from scipy import stats as sp_stats
+
+logger = logging.getLogger(__name__)
 
 
 class EvolutionEngine:
@@ -18,6 +21,7 @@ class EvolutionEngine:
     def evaluate(self, claim_data):
         yi = np.array(claim_data.get('yi', []), dtype=float)
         sei = np.array(claim_data.get('sei', []), dtype=float)
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         years = claim_data.get('years', [])
 
         k = len(yi)

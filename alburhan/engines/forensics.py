@@ -9,9 +9,12 @@ Methods:
   5. Shannon Entropy: information-theoretic measure of effect size dispersion
 """
 
+import logging
 import math
 import numpy as np
 from scipy import stats as sp_stats
+
+logger = logging.getLogger(__name__)
 
 
 class RegistryForensicsEngine:
@@ -20,6 +23,7 @@ class RegistryForensicsEngine:
     def evaluate(self, claim_data):
         yi = np.array(claim_data.get('yi', []), dtype=float)
         sei = np.array(claim_data.get('sei', []), dtype=float)
+        logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         treat_events = claim_data.get('treat_events')
         treat_total = claim_data.get('treat_total')
 

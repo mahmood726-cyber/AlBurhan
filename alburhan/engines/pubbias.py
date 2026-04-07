@@ -26,8 +26,11 @@ Six methods for detecting publication bias from yi/sei pairs:
    chi2 = (O - E)^2 / E with df=1.
 """
 
+import logging
 import numpy as np
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 class PubBiasEngine:
@@ -40,6 +43,7 @@ class PubBiasEngine:
         yi = np.array(claim_data.get("yi", []), dtype=float)
         sei = np.array(claim_data.get("sei", []), dtype=float)
         k = len(yi)
+        logger.info("%s: evaluating k=%d studies", self.name, k)
 
         if k < 3:
             return {
