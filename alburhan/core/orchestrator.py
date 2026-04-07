@@ -49,6 +49,7 @@ class EvidenceOrchestrator:
             RobustMAEngine(),
             PubBiasEngine(),
             MetaRegressionEngine(),
+            DoseResponseEngine(),
             E156Emitter()
         ]
 
