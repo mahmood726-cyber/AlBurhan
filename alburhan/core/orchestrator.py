@@ -17,6 +17,8 @@ from alburhan.engines.robust import RobustMAEngine
 from alburhan.engines.pubbias import PubBiasEngine
 from alburhan.engines.metareg import MetaRegressionEngine
 from alburhan.engines.dose_response import DoseResponseEngine
+from alburhan.engines.sequential import SequentialTSAEngine
+from alburhan.engines.grade import GRADEEngine
 from alburhan.engines.e156 import E156Emitter
 
 logger = logging.getLogger(__name__)
@@ -27,6 +29,7 @@ ENGINE_DEPS: Dict[str, List[str]] = {
     "AfricaRCT": ["PredictionGap"],
     "CausalSynth": ["MetaFrontierLab", "PredictionGap"],
     "SynthesisLoss": ["Al-Mizan"],
+    "GRADE": [],  # Depends on all prior engines (handled by position)
     "E156": [],  # E156 depends on ALL others; handled specially
 }
 
@@ -50,6 +53,8 @@ class EvidenceOrchestrator:
             PubBiasEngine(),
             MetaRegressionEngine(),
             DoseResponseEngine(),
+            SequentialTSAEngine(),
+            GRADEEngine(),
             E156Emitter()
         ]
 
@@ -63,8 +68,8 @@ class EvidenceOrchestrator:
             # Inject cross-engine data based on declared dependencies
             self._inject_dependencies(engine.name, ctx, results)
 
-            # E156 gets the full results so far
-            if engine.name == "E156":
+            # GRADE and E156 both get the full results so far
+            if engine.name in ("GRADE", "E156"):
                 ctx["audit_results"] = dict(results)
 
             # Wrap each engine in try/except (ENG-P0-3)
