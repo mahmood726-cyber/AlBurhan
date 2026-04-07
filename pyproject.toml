@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alburhan"
+version = "0.1.0"
+description = "Universal Evidence Orchestrator"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pandas",
+    "numpy",
+    "scipy",
+    "click"
+]
+
+[project.scripts]
+alburhan = "alburhan.cli:main"
