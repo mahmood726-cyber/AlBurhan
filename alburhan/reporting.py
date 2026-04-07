@@ -2,6 +2,8 @@ import os
 from datetime import datetime
 from html import escape
 
+from alburhan.plots import forest_plot, funnel_plot, cusum_plot, galbraith_plot
+
 
 def generate_html_report(results, claim_id, country, condition, output_path=None):
     """Generate an accessible HTML report with proper escaping."""
@@ -64,6 +66,86 @@ def generate_html_report(results, claim_id, country, condition, output_path=None
     _gd_pub = (grade_domains.get('publication_bias') or {}).get('downgrade', 'N/A')
 
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # ── SVG plots ────────────────────────────────────────────────────────────
+    # Forest plot: yi/sei from PredictionGap metrics
+    _pg_m = pg  # already extracted above
+    _forest_yi = results.get('PredictionGap', {}).get('_input_yi', None)
+    _forest_sei = results.get('PredictionGap', {}).get('_input_sei', None)
+    # Fallback: try claim data stored in results
+    if _forest_yi is None:
+        _forest_yi = results.get('_yi', None)
+    if _forest_sei is None:
+        _forest_sei = results.get('_sei', None)
+    _pooled_theta = _pg_m.get('theta') if _pg_m else None
+    _pooled_ci = (
+        (_pg_m.get('ci_lo'), _pg_m.get('ci_hi'))
+        if (_pg_m and _pg_m.get('ci_lo') is not None and _pg_m.get('ci_hi') is not None)
+        else None
+    )
+    try:
+        forest_svg = (
+            forest_plot(
+                _forest_yi, _forest_sei,
+                pooled_theta=_pooled_theta, pooled_ci=_pooled_ci
+            )
+            if (_forest_yi and _forest_sei)
+            else ""
+        )
+    except Exception:
+        forest_svg = ""
+
+    # Funnel plot: yi/sei + egger intercept + trim-fill points
+    _pb = pb  # already extracted above
+    _egger_intercept = (_pb.get('egger') or {}).get('intercept') if _pb else None
+    _tf_raw = (_pb.get('trim_fill') or {}) if _pb else {}
+    _tf_pts = _tf_raw.get('imputed_points', None)  # list of (yi, se) if engine provides it
+    try:
+        funnel_svg = (
+            funnel_plot(
+                _forest_yi, _forest_sei,
+                pooled_theta=_pooled_theta,
+                egger_intercept=_egger_intercept,
+                trim_fill_points=_tf_pts,
+            )
+            if (_forest_yi and _forest_sei)
+            else ""
+        )
+    except Exception:
+        funnel_svg = ""
+
+    # CUSUM plot: from SequentialTSA output
+    _tsa = results.get('SequentialTSA', {})
+    _z_traj = _tsa.get('z_trajectory') if _tsa else None
+    _eff_bounds = _tsa.get('obf_alpha_boundaries') if _tsa else None
+    _fut_bounds = _tsa.get('obf_futility_boundaries') if _tsa else None
+    _info_fracs = _tsa.get('information_fractions') if _tsa else None
+    try:
+        cusum_svg = (
+            cusum_plot(
+                _z_traj,
+                efficacy_bounds=_eff_bounds,
+                futility_bounds=_fut_bounds,
+                info_fractions=_info_fracs,
+            )
+            if _z_traj
+            else ""
+        )
+    except Exception:
+        cusum_svg = ""
+
+    # Galbraith plot: yi/sei + pooled_theta
+    try:
+        galbraith_svg = (
+            galbraith_plot(
+                _forest_yi, _forest_sei,
+                pooled_theta=_pooled_theta,
+            )
+            if (_forest_yi and _forest_sei)
+            else ""
+        )
+    except Exception:
+        galbraith_svg = ""
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -237,6 +319,16 @@ def generate_html_report(results, claim_id, country, condition, output_path=None
                     <strong>Total Downgrade:</strong> {sv(grade_total_dg)}
                 </div>
             </article>
+        </div>
+        </section>
+
+        <section aria-label="Evidence plots">
+        <h2>Visual Evidence</h2>
+        <div class="grid">
+            <div class="card">{forest_svg}</div>
+            <div class="card">{funnel_svg}</div>
+            <div class="card">{cusum_svg}</div>
+            <div class="card">{galbraith_svg}</div>
         </div>
         </section>
 
