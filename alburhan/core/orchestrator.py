@@ -20,6 +20,8 @@ from alburhan.engines.dose_response import DoseResponseEngine
 from alburhan.engines.sequential import SequentialTSAEngine
 from alburhan.engines.grade import GRADEEngine
 from alburhan.engines.e156 import E156Emitter
+from alburhan.engines.prisma import PRISMAEngine
+from alburhan.engines.rob import RoB2Engine
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +31,10 @@ ENGINE_DEPS: Dict[str, List[str]] = {
     "AfricaRCT": ["PredictionGap"],
     "CausalSynth": ["MetaFrontierLab", "PredictionGap"],
     "SynthesisLoss": ["Al-Mizan"],
-    "GRADE": ["PredictionGap", "FragilityAtlas", "RegistryForensics", "NetworkMeta", "AfricaRCT", "PubBias"],
+    "GRADE": ["PredictionGap", "FragilityAtlas", "RegistryForensics", "NetworkMeta", "AfricaRCT", "PubBias", "RoB2"],
     "E156": ["PredictionGap", "MetaFrontierLab", "FragilityAtlas", "CausalSynth", "RegistryForensics", "NetworkMeta", "SynthesisLoss", "BayesianMA", "PubBias", "GRADE"],
+    "RoB2": ["RegistryForensics", "NetworkMeta", "PubBias"],
+    "PRISMA": ["PredictionGap", "FragilityAtlas", "RobustMA", "PubBias", "GRADE", "NetworkMeta", "BayesianMA", "MetaRegression", "Al-Mizan", "E156", "RoB2"],
 }
 
 
@@ -54,8 +58,10 @@ class EvidenceOrchestrator:
             MetaRegressionEngine(),
             DoseResponseEngine(),
             SequentialTSAEngine(),
+            RoB2Engine(),
             GRADEEngine(),
-            E156Emitter()
+            E156Emitter(),
+            PRISMAEngine()
         ]
 
     def run_audit(self, claim_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -68,8 +74,8 @@ class EvidenceOrchestrator:
             # Inject cross-engine data based on declared dependencies
             self._inject_dependencies(engine.name, ctx, results)
 
-            # GRADE and E156 both get the full results so far
-            if engine.name in ("GRADE", "E156"):
+            # GRADE, E156, RoB2, and PRISMA all get the full results so far
+            if engine.name in ("GRADE", "E156", "RoB2", "PRISMA"):
                 ctx["audit_results"] = dict(results)
 
             # Wrap each engine in try/except (ENG-P0-3)

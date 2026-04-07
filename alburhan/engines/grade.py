@@ -57,6 +57,19 @@ class GRADEEngine:
     # ── Domain 1: Risk of Bias ────────────────────────────────────────────────
 
     def _risk_of_bias(self, results):
+        # Prefer RoB2 overall_risk when available (more comprehensive signal)
+        rob2 = results.get("RoB2", {})
+        if rob2.get("status") == "evaluated":
+            overall = rob2.get("overall_risk", "Some Concerns")
+            n_high = rob2.get("n_high_risk_studies", 0)
+            if overall == "High":
+                return -2, f"RoB2 overall_risk=High ({n_high} high-risk studies)"
+            elif overall == "Some Concerns":
+                return -1, f"RoB2 overall_risk=Some Concerns"
+            else:
+                return 0, "RoB2 overall_risk=Low"
+
+        # Fall back to RegistryForensics anomaly flags
         rf = results.get("RegistryForensics", {})
         if rf.get("status") != "evaluated":
             # Missing upstream engine — worst-case downgrade
