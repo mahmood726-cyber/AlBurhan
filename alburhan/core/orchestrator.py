@@ -15,6 +15,8 @@ from alburhan.engines.nma import NetworkMetaEngine
 from alburhan.engines.bayesian import BayesianMAEngine
 from alburhan.engines.robust import RobustMAEngine
 from alburhan.engines.pubbias import PubBiasEngine
+from alburhan.engines.metareg import MetaRegressionEngine
+from alburhan.engines.dose_response import DoseResponseEngine
 from alburhan.engines.e156 import E156Emitter
 
 logger = logging.getLogger(__name__)
@@ -46,6 +48,7 @@ class EvidenceOrchestrator:
             BayesianMAEngine(),
             RobustMAEngine(),
             PubBiasEngine(),
+            MetaRegressionEngine(),
             E156Emitter()
         ]
 
