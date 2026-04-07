@@ -99,5 +99,77 @@ def audit(claim_id, country, condition, html, output_dir, verbose):
     click.echo(f"  Ledger saved: {ledger_path}")
 
 
+@main.command()
+@click.argument('condition')
+@click.option('--intervention', '-i', default=None, help='Intervention filter')
+@click.option('--source', type=click.Choice(['live', 'aact', 'both']), default='live')
+@click.option('--max-trials', default=20, type=int)
+@click.option('--run-audit', is_flag=True, help='Automatically run full audit on results')
+@click.option('--html', is_flag=True, help='Generate HTML report (requires --run-audit)')
+@click.option('--output-dir', default=None, type=click.Path())
+@click.option('--verbose', '-v', is_flag=True)
+def ingest(condition, intervention, source, max_trials, run_audit, html, output_dir, verbose):
+    """Ingest real trial data from CT.gov and optionally run audit."""
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    out_path = Path(output_dir) if output_dir else Path('.')
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    claim_data = None
+
+    if source in ('live', 'both'):
+        from alburhan.ingest.ctgov import CTGovClient
+        click.echo(f"Searching CT.gov for: {condition}...")
+        client = CTGovClient()
+        claim_data = client.build_claim_data(condition, intervention, max_trials)
+        if claim_data.get("status") in ("empty", "error"):
+            click.echo(f"  Live: {claim_data.get('message', 'No results')}")
+            claim_data = None
+        else:
+            click.echo(f"  Live: Found {len(claim_data['yi'])} trials with extractable results")
+
+    if source in ('aact', 'both') and claim_data is None:
+        from alburhan.ingest.aact import AACTClient
+        click.echo(f"Searching local AACT for: {condition}...")
+        client = AACTClient()
+        claim_data = client.build_claim_data(condition, intervention, max_trials)
+        if claim_data.get("status") in ("empty", "error"):
+            click.echo(f"  AACT: {claim_data.get('message', 'No results')}")
+            claim_data = None
+        else:
+            click.echo(f"  AACT: Found {len(claim_data['yi'])} trials with extractable results")
+
+    if claim_data is None:
+        click.echo("No trial data found. Try different search terms.")
+        return
+
+    # Save raw ingested data
+    slug = re.sub(r'[^a-zA-Z0-9]+', '_', condition).strip('_').lower()
+    raw_path = out_path / f"ingest_{slug}.json"
+    with open(raw_path, "w", encoding="utf-8") as f:
+        json.dump(claim_data, f, indent=2, cls=AlBurhanEncoder)
+    click.echo(f"  Raw data saved: {raw_path}")
+
+    if run_audit:
+        click.echo(f"Running full {len(claim_data['yi'])}-study audit...")
+        orchestrator = EvidenceOrchestrator()
+        results = orchestrator.run_audit(claim_data)
+
+        pg = results.get('PredictionGap', {}).get('metrics', {})
+        grade = results.get('GRADE', {})
+        click.echo(f"  Pooled effect: {pg.get('theta', 'N/A')}")
+        click.echo(f"  GRADE certainty: {grade.get('certainty', 'N/A')}")
+
+        if html:
+            html_path = out_path / f"AL_BURHAN_{slug}.html"
+            generate_html_report(results, slug, "Global", condition, str(html_path))
+
+        ledger_path = out_path / f"audit_{slug}.json"
+        with open(ledger_path, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2, cls=AlBurhanEncoder)
+        click.echo(f"  Audit saved: {ledger_path}")
+
+
 if __name__ == '__main__':
     main()
