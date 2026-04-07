@@ -12,6 +12,7 @@ from alburhan.engines.causalsynth import CausalSynthEngine
 from alburhan.engines.drift import EvidenceDriftEngine
 from alburhan.engines.forensics import RegistryForensicsEngine
 from alburhan.engines.nma import NetworkMetaEngine
+from alburhan.engines.bayesian import BayesianMAEngine
 from alburhan.engines.e156 import E156Emitter
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class EvidenceOrchestrator:
             NetworkMetaEngine(),
             AlMizanEngine(),
             AfricaRCTEngine(),
+            BayesianMAEngine(),
             E156Emitter()
         ]
 
