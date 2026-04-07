@@ -47,14 +47,17 @@ class RegistryForensicsEngine:
         # 5. Shannon Entropy of effect distribution
         results["scientific_entropy"] = self._shannon_entropy(yi)
 
+        # 6. Benford's law first-significant-digit test
+        results["benford"] = self._benford_test(yi)
+
         # Composite anomaly count
-        flags = sum(1 for key in ("terminal_digit", "se_homogeneity", "normality")
+        flags = sum(1 for key in ("terminal_digit", "se_homogeneity", "normality", "benford")
                     if results.get(key, {}).get("flagged", False))
         if isinstance(results["grim"], dict) and results["grim"].get("flagged", False):
             flags += 1
 
         results["anomaly_flags"] = flags
-        results["total_tests"] = 4 if treat_events is not None else 3
+        results["total_tests"] = 5 if treat_events is not None else 4
         results["forensic_status"] = "Anomalies Detected" if flags >= 2 else "Nominal"
 
         return results
@@ -168,6 +171,72 @@ class RegistryForensicsEngine:
         return {
             "shapiro_w": round(float(stat), 4),
             "p_value": round(float(p_value), 4),
+            "flagged": p_value < alpha
+        }
+
+    def _benford_test(self, yi, alpha=0.05):
+        """Benford's law: chi-squared test on first significant digit distribution."""
+        digits = []
+        for val in yi:
+            av = abs(float(val))
+            if av == 0.0:
+                continue
+            # Shift to [1, 10) to extract first significant digit
+            exp = math.floor(math.log10(av))
+            shifted = av / (10.0 ** exp)
+            d = int(shifted)
+            if 1 <= d <= 9:
+                digits.append(d)
+
+        if len(digits) < 5:
+            return {"status": "skipped", "reason": "Need >=5 non-zero values for Benford test"}
+
+        # Expected Benford distribution P(d) = log10(1 + 1/d)
+        observed = np.zeros(9)
+        for d in digits:
+            observed[d - 1] += 1
+
+        expected_probs = np.array([math.log10(1.0 + 1.0 / d) for d in range(1, 10)])
+        expected = expected_probs * len(digits)
+
+        # Merge low-expected bins into neighbours to satisfy chisquare requirements
+        # Group consecutive bins until each has expected >= 1
+        obs_merged = []
+        exp_merged = []
+        obs_acc = 0.0
+        exp_acc = 0.0
+        for ob, ex in zip(observed, expected):
+            obs_acc += ob
+            exp_acc += ex
+            if exp_acc >= 1.0:
+                obs_merged.append(obs_acc)
+                exp_merged.append(exp_acc)
+                obs_acc = 0.0
+                exp_acc = 0.0
+        # Absorb any remainder into the last bin
+        if obs_acc > 0 or exp_acc > 0:
+            if obs_merged:
+                obs_merged[-1] += obs_acc
+                exp_merged[-1] += exp_acc
+            else:
+                obs_merged.append(obs_acc)
+                exp_merged.append(exp_acc)
+
+        if len(obs_merged) < 2:
+            return {"status": "skipped", "reason": "Insufficient digit variation for Benford"}
+
+        obs_arr = np.array(obs_merged)
+        exp_arr = np.array(exp_merged)
+        # Rescale expected to exactly match observed total (floating-point safety)
+        exp_arr = exp_arr * (obs_arr.sum() / exp_arr.sum())
+
+        chi2, p_value = sp_stats.chisquare(obs_arr, exp_arr)
+
+        return {
+            "chi2": round(float(chi2), 3),
+            "p_value": round(float(p_value), 4),
+            "df": len(obs_merged) - 1,
+            "n_digits": len(digits),
             "flagged": p_value < alpha
         }
 

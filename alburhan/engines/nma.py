@@ -37,6 +37,12 @@ class NetworkMetaEngine:
         # Heterogeneity contribution per study
         q_contributions = self._q_contributions(yi, sei, full)
 
+        # Cook's distance analog per study
+        cooks_distance = self._cooks_distance(yi, sei, full, loo_results)
+
+        # Galbraith radial plot statistics
+        galbraith = self._galbraith_radial(yi, sei)
+
         # Identify influential studies
         influential = []
         for i in range(k):
@@ -68,6 +74,8 @@ class NetworkMetaEngine:
                 round(float(max(r["theta"] for r in loo_results)), 4),
             ],
             "consistency_status": "Consistent" if len(influential) == 0 else "Influential Studies Detected",
+            "cooks_distance": cooks_distance,
+            "galbraith": galbraith,
         }
 
     def _dl_meta(self, yi, sei):
@@ -127,3 +135,47 @@ class NetworkMetaEngine:
         theta_fe = full_result["theta"]
         wi = 1.0 / sei ** 2
         return wi * (yi - theta_fe) ** 2
+
+    def _cooks_distance(self, yi, sei, full_result, loo_results):
+        """Cook's distance analog: D_i = (theta_full - theta_loo_i)^2 / var(theta_full)."""
+        theta_full = full_result["theta"]
+        var_full = full_result["se"] ** 2
+        if var_full <= 0:
+            return [0.0] * len(yi)
+        cooks = []
+        for loo in loo_results:
+            d = (theta_full - loo["theta"]) ** 2 / var_full
+            cooks.append(round(float(d), 6))
+        return cooks
+
+    def _galbraith_radial(self, yi, sei):
+        """Galbraith radial plot: regress z/se on 1/se; flag studies outside ±2 residuals."""
+        k = len(yi)
+        x = 1.0 / sei          # precision (1/se)
+        z = yi / sei           # standardised effect (z-score)
+
+        # OLS: z = intercept + slope * x  (slope ≈ theta, intercept ≈ 0 under homogeneity)
+        x_bar = float(np.mean(x))
+        z_bar = float(np.mean(z))
+        ssxx = float(np.sum((x - x_bar) ** 2))
+        ssxz = float(np.sum((x - x_bar) * (z - z_bar)))
+
+        if ssxx == 0:
+            slope = 0.0
+            intercept = z_bar
+        else:
+            slope = ssxz / ssxx
+            intercept = z_bar - slope * x_bar
+
+        # Residuals from the regression line
+        fitted = intercept + slope * x
+        residuals = z - fitted
+
+        # Outlier indices: |residual| > 2
+        outlier_indices = [int(i) for i in range(k) if abs(residuals[i]) > 2.0]
+
+        return {
+            "intercept": round(float(intercept), 4),
+            "slope": round(float(slope), 4),
+            "outlier_indices": outlier_indices,
+        }

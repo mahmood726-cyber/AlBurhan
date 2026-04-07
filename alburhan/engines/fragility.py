@@ -1,6 +1,6 @@
 ﻿import numpy as np
 from scipy import stats
-from scipy.optimize import minimize_scalar
+from scipy.optimize import minimize_scalar, brentq
 
 class FragilityEngine:
     name = "FragilityAtlas"
@@ -10,8 +10,8 @@ class FragilityEngine:
         Multiverse fragility analysis.
         Checks robustness across variance estimators and CI methods.
 
-        Grid: 3 estimators (FE, DL, REML) x 2 CI methods (Wald, HKSJ)
-        = 6 unique specifications.
+        Grid: 5 estimators (FE, DL, REML, PM, SJ) x 2 CI methods (Wald, HKSJ)
+        = 10 unique specifications.
         """
         yi = np.array(claim_data.get('yi', []))
         sei = np.array(claim_data.get('sei', []))
@@ -22,7 +22,7 @@ class FragilityEngine:
         results = []
         reference_sig = self._is_sig(yi, sei, method="DL", ci="Wald")
 
-        for estimator in ["FE", "DL", "REML"]:
+        for estimator in ["FE", "DL", "REML", "PM", "SJ"]:
             for ci_method in ["Wald", "HKSJ"]:
                 sig = self._is_sig(yi, sei, method=estimator, ci=ci_method)
                 results.append(sig == reference_sig)
@@ -66,7 +66,43 @@ class FragilityEngine:
         if method == "REML":
             return self._reml_tau2(yi, sei, tau2_init=tau2_dl)
 
+        # Paule-Mandel: solve Q(tau2) = k-1 via brentq
+        if method == "PM":
+            return self._pm_tau2(yi, sei, k, wi)
+
+        # Sidik-Jonkman: unweighted moment estimator
+        if method == "SJ":
+            theta_fe = np.sum(wi * yi) / np.sum(wi)
+            tau2_sj = float(np.sum((yi - theta_fe) ** 2 - sei ** 2) / (k - 1))
+            return max(0.0, tau2_sj)
+
         return tau2_dl
+
+    def _pm_tau2(self, yi, sei, k, wi):
+        """Paule-Mandel estimator: solve Q(tau2) = k-1 via brentq."""
+        vi = sei ** 2
+
+        def q_minus_df(tau2):
+            w = 1.0 / (vi + tau2)
+            theta = np.sum(w * yi) / np.sum(w)
+            return float(np.sum(w * (yi - theta) ** 2)) - (k - 1)
+
+        # If Q(0) <= k-1, tau2=0 is the solution
+        if q_minus_df(0.0) <= 0.0:
+            return 0.0
+
+        # Find upper bound where Q(tau2) crosses k-1
+        upper = 10.0
+        while q_minus_df(upper) > 0 and upper < 1e6:
+            upper *= 10.0
+        if q_minus_df(upper) > 0:
+            return 0.0
+
+        try:
+            tau2_pm = brentq(q_minus_df, 0.0, upper, xtol=1e-8)
+        except ValueError:
+            tau2_pm = 0.0
+        return max(0.0, float(tau2_pm))
 
     def _reml_tau2(self, yi, sei, tau2_init=0.0):
         """REML estimator via negative restricted log-likelihood minimization."""

@@ -52,6 +52,14 @@ class PredictionGapEngine:
         I2 = max(0, (Q - (k - 1)) / Q * 100) if Q > 0 else 0
         p_value = 2 * (1 - stats.norm.cdf(abs(theta / se_theta))) if se_theta > 0 else 1
 
+        # Knapp-Hartung adjusted CI (HKSJ variant)
+        # q = sum(wi*(yi-theta)^2)/(k-1), se_kh = se * sqrt(max(1, q))
+        q_kh = float(np.sum(wi_star * (yi - theta) ** 2) / (k - 1)) if k > 1 else 1.0
+        se_kh = se_theta * math.sqrt(max(1.0, q_kh))
+        t_kh = stats.t.ppf(1 - alpha / 2, k - 1)
+        kh_ci_lo = theta - t_kh * se_kh
+        kh_ci_hi = theta + t_kh * se_kh
+
         return {
             'theta': theta,
             'se': se_theta,
@@ -66,6 +74,8 @@ class PredictionGapEngine:
             'pi_ci_ratio': (pi_hi - pi_lo) / (ci_hi - ci_lo) if (ci_hi - ci_lo) > 0 else float('inf'),
             'p_value': p_value,
             'k': k,
+            'kh_ci_lo': kh_ci_lo,
+            'kh_ci_hi': kh_ci_hi,
         }
 
     def classify_discordance(self, result):

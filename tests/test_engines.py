@@ -125,6 +125,17 @@ class TestPredictionGapEngine:
         assert abs(r["theta"] - theta) < 1e-10
         assert abs(r["se"] - se) < 1e-10
 
+    def test_knapp_hartung_ci(self, standard_claim):
+        """KH CI must be at least as wide as Wald CI (Rover truncation ensures this)."""
+        r = self.engine.compute_prediction_interval(
+            np.array(standard_claim["yi"]), np.array(standard_claim["sei"])
+        )
+        wald_width = r["ci_hi"] - r["ci_lo"]
+        kh_width = r["kh_ci_hi"] - r["kh_ci_lo"]
+        assert "kh_ci_lo" in r
+        assert "kh_ci_hi" in r
+        assert kh_width >= wald_width - 1e-10  # KH >= Wald (Rover truncation)
+
 
 # ═══════════════════════════ FRAGILITY ══════════════════════════════════════
 
@@ -159,9 +170,9 @@ class TestFragilityEngine:
         r = self.engine.evaluate(constant_effects_claim)
         assert r["robustness_score"] == 100.0
 
-    def test_six_specifications(self, standard_claim):
+    def test_ten_specifications(self, standard_claim):
         r = self.engine.evaluate(standard_claim)
-        assert int(r["reference_agreement"].split("/")[1]) == 6
+        assert int(r["reference_agreement"].split("/")[1]) == 10
 
 
 # ═══════════════════════════ CAUSAL SYNTH ═══════════════════════════════════
@@ -193,6 +204,20 @@ class TestCausalSynthEngine:
     def test_protective_effect(self):
         r = self.engine.evaluate({"theta": -0.5, "se": 0.1})
         assert r["e_value"] > 1.0
+
+    def test_bias_adjusted_evalue(self):
+        """Bias-adjusted E-value <= point E-value (bias_factor < 1 reduces RR)."""
+        r = self.engine.evaluate({"theta": 0.89, "se": 0.16})
+        assert "e_value_bias_adjusted" in r
+        # Default bias_factor=0.9 reduces RR, so bias-adjusted E-value <= point E-value
+        assert r["e_value_bias_adjusted"] <= r["e_value"]
+
+    def test_bias_adjusted_evalue_custom_factor(self):
+        """Custom bias_factor is respected."""
+        r1 = self.engine.evaluate({"theta": 0.89, "se": 0.16, "bias_factor": 0.5})
+        r2 = self.engine.evaluate({"theta": 0.89, "se": 0.16, "bias_factor": 1.0})
+        # bias_factor=0.5 gives a larger reduction than bias_factor=1.0
+        assert r1["e_value_bias_adjusted"] <= r2["e_value_bias_adjusted"]
 
 
 # ═══════════════════════════ DRIFT ══════════════════════════════════════════
@@ -287,6 +312,18 @@ class TestRegistryForensicsEngine:
         r = self.engine.evaluate(heterogeneous_claim)
         assert r["scientific_entropy"] > 0
 
+    def test_benford_law(self, standard_claim):
+        """Benford test key present with chi2 + p_value."""
+        r = self.engine.evaluate(standard_claim)
+        assert "benford" in r
+        benford = r["benford"]
+        # Either computed or skipped (k=5 exactly hits the boundary)
+        if benford.get("status") != "skipped":
+            assert "chi2" in benford
+            assert "p_value" in benford
+            assert benford["chi2"] >= 0
+            assert 0.0 <= benford["p_value"] <= 1.0
+
 
 # ═══════════════════════════ NETWORK META (INFLUENCE) ═══════════════════════
 
@@ -320,6 +357,25 @@ class TestNetworkMetaEngine:
         r = self.engine.evaluate(constant_effects_claim)
         assert r["consistency_status"] == "Consistent"
         assert r["n_influential"] == 0
+
+    def test_cooks_distance(self, standard_claim):
+        """Cook's D: list of k floats, all >= 0."""
+        r = self.engine.evaluate(standard_claim)
+        assert "cooks_distance" in r
+        cooks = r["cooks_distance"]
+        k = len(standard_claim["yi"])
+        assert len(cooks) == k
+        assert all(d >= 0.0 for d in cooks)
+
+    def test_galbraith_radial(self, standard_claim):
+        """Galbraith dict with intercept, slope, outlier_indices."""
+        r = self.engine.evaluate(standard_claim)
+        assert "galbraith" in r
+        g = r["galbraith"]
+        assert "intercept" in g
+        assert "slope" in g
+        assert "outlier_indices" in g
+        assert isinstance(g["outlier_indices"], list)
 
 
 # ═══════════════════════════ EVOLUTION (MATURITY) ═══════════════════════════
