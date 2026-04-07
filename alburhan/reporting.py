@@ -22,6 +22,9 @@ def generate_html_report(results, claim_id, country, condition, output_path=None
     rf = results.get('RegistryForensics', {})
     nm = results.get('NetworkMeta', {})
     ar = results.get('AfricaRCT', {})
+    bayes = results.get('BayesianMA', {})
+    pb = results.get('PubBias', {})
+    grade = results.get('GRADE', {})
     e156_data = results.get('E156', {})
     e156_body = escape(str(e156_data.get('body', 'N/A')))
 
@@ -42,6 +45,23 @@ def generate_html_report(results, claim_id, country, condition, output_path=None
 
     rf_status = rf.get('forensic_status', 'N/A')
     rf_badge_icon = '&#x26A0; ' if rf_status != 'Nominal' else '&#x2713; '
+
+    # GRADE badge CSS
+    grade_certainty = grade.get('certainty', 'N/A') if grade.get('status') == 'evaluated' else 'N/A'
+    _grade_css_map = {
+        'HIGH': 'badge-grade-high',
+        'MODERATE': 'badge-grade-moderate',
+        'LOW': 'badge-grade-low',
+        'VERY LOW': 'badge-grade-verylow',
+    }
+    grade_badge_css = _grade_css_map.get(grade_certainty, 'badge-grade-verylow')
+    grade_domains = grade.get('domains', {}) if grade.get('status') == 'evaluated' else {}
+    grade_total_dg = grade.get('total_downgrade', 'N/A') if grade.get('status') == 'evaluated' else 'N/A'
+    _gd_rob = (grade_domains.get('risk_of_bias') or {}).get('downgrade', 'N/A')
+    _gd_inc = (grade_domains.get('inconsistency') or {}).get('downgrade', 'N/A')
+    _gd_ind = (grade_domains.get('indirectness') or {}).get('downgrade', 'N/A')
+    _gd_imp = (grade_domains.get('imprecision') or {}).get('downgrade', 'N/A')
+    _gd_pub = (grade_domains.get('publication_bias') or {}).get('downgrade', 'N/A')
 
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -76,6 +96,10 @@ def generate_html_report(results, claim_id, country, condition, output_path=None
         .e156-box {{ background: #161b22; border-left: 4px solid var(--accent); padding: 20px; font-style: italic; font-size: 1.05rem; margin-top: 20px; border-radius: 0 12px 12px 0; }}
 
 
+        .badge-grade-high {{ background: rgba(63, 185, 80, 0.15); color: var(--success); border: 1px solid var(--success); }}
+        .badge-grade-moderate {{ background: rgba(210, 153, 34, 0.15); color: var(--warning); border: 1px solid var(--warning); }}
+        .badge-grade-low {{ background: rgba(248, 152, 29, 0.15); color: #f8981d; border: 1px solid #f8981d; }}
+        .badge-grade-verylow {{ background: rgba(248, 81, 73, 0.15); color: var(--danger); border: 1px solid var(--danger); }}
         footer {{ text-align: center; margin-top: 50px; color: #8b949e; font-size: 0.8rem; border-top: 1px solid #30363d; padding-top: 20px; }}
         a {{ color: var(--accent); }}
         .sr-only {{ position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }}
@@ -164,6 +188,53 @@ def generate_html_report(results, claim_id, country, condition, output_path=None
                     <strong>Tipping Point:</strong> {sv(am.get('tipping_year'))}<br>
                     <strong>GERI Relevance:</strong> {sv(ar.get('relevance_index'))}<br>
                     <strong>Burden Alignment:</strong> {sv((ar.get('burden_alignment') or {}).get('reason', 'N/A'))}
+                </div>
+            </article>
+
+            <!-- BAYESIAN EVIDENCE CARD -->
+            <article class="card">
+                <h3>Bayesian Evidence</h3>
+                <div class="metric-box">
+                    <div class="metric-val" aria-label="Bayesian Posterior Mean: {sv(bayes.get('posterior_mu'))}">{sv(bayes.get('posterior_mu'))}</div>
+                    <div class="metric-sublabel">Posterior Mean</div>
+                </div>
+                <div class="detail">
+                    <strong>95% CrI:</strong> {sv(bayes.get('cri_lo'))} to {sv(bayes.get('cri_hi'))}<br>
+                    <strong>Bayes Factor (BF&#x2081;&#x2080;):</strong> {sv(bayes.get('bf10'))}<br>
+                    <strong>Evidence:</strong> {sv(bayes.get('evidence_label'))}
+                </div>
+            </article>
+
+            <!-- PUBLICATION BIAS CARD -->
+            <article class="card">
+                <h3>Publication Bias</h3>
+                <div class="metric-box">
+                    <div class="metric-val" aria-label="Trim-Fill Missing Studies: {sv((pb.get('trim_fill') or {}).get('n_missing'))}">{sv((pb.get('trim_fill') or {}).get('n_missing'))}</div>
+                    <div class="metric-sublabel">Trim-Fill Missing Studies</div>
+                </div>
+                <div class="detail">
+                    <strong>Egger p-value:</strong> {sv((pb.get('egger') or {}).get('p_value'))}<br>
+                    <strong>Fail-safe N:</strong> {sv((pb.get('failsafe_n') or {}).get('failsafe_n'))}<br>
+                    <strong>P-curve verdict:</strong> {sv((pb.get('p_curve') or {}).get('skew_direction'))}
+                </div>
+            </article>
+
+            <!-- GRADE CERTAINTY CARD -->
+            <article class="card">
+                <h3>GRADE Certainty</h3>
+                <div class="metric-box">
+                    <div class="metric-val" aria-label="GRADE Certainty: {sv(grade_certainty)}">
+                        <span class="status-badge {grade_badge_css}">{sv(grade_certainty)}</span>
+                    </div>
+                    <div class="metric-sublabel">Overall Certainty of Evidence</div>
+                </div>
+                <div class="detail">
+                    <strong>Risk of Bias:</strong> {sv(_gd_rob)}<br>
+                    <strong>Inconsistency:</strong> {sv(_gd_inc)}<br>
+                    <strong>Indirectness:</strong> {sv(_gd_ind)}<br>
+                    <strong>Imprecision:</strong> {sv(_gd_imp)}<br>
+                    <strong>Publication Bias:</strong> {sv(_gd_pub)}<br>
+                    <strong>Total Downgrade:</strong> {sv(grade_total_dg)}
                 </div>
             </article>
         </div>

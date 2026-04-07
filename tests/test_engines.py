@@ -494,6 +494,36 @@ class TestE156Emitter:
             "NetworkMeta": {"status": "evaluated", "n_influential": 1,
                             "max_studentized_residual": 2.3},
             "SynthesisLoss": {"status": "evaluated", "information_loss_ratio": 0.15},
+            "BayesianMA": {
+                "status": "evaluated",
+                "posterior_mu": 0.52,
+                "posterior_mu_sd": 0.09,
+                "cri_lo": 0.34,
+                "cri_hi": 0.70,
+                "bf01": 0.08,
+                "bf10": 12.5,
+                "evidence_label": "Positive",
+            },
+            "PubBias": {
+                "status": "evaluated",
+                "egger": {"intercept": 0.21, "p_value": 0.12, "significant": False},
+                "trim_fill": {"n_missing": 2, "adjusted_theta": 0.44, "original_theta": 0.50},
+                "failsafe_n": {"failsafe_n": 120.0, "robust_threshold": 35, "robust": True},
+                "p_curve": {"n_significant": 4, "right_skew_p": 0.03, "skew_direction": "right"},
+            },
+            "GRADE": {
+                "status": "evaluated",
+                "certainty": "MODERATE",
+                "certainty_score": 3,
+                "total_downgrade": -1,
+                "domains": {
+                    "risk_of_bias": {"downgrade": -1, "reason": "1 anomaly flag detected"},
+                    "inconsistency": {"downgrade": 0, "reason": "I2=30%, 1 influential study"},
+                    "indirectness": {"downgrade": 0, "reason": "Condition aligned with burden"},
+                    "imprecision": {"downgrade": 0, "reason": "CI width 0.40, not fragile"},
+                    "publication_bias": {"downgrade": 0, "reason": "No bias detected"},
+                },
+            },
         }
 
     def test_seven_sentences(self, standard_claim):
@@ -514,6 +544,27 @@ class TestE156Emitter:
         r = E156Emitter().evaluate(claim)
         assert "disclosure" not in r
         assert "has_simulated_engines" not in r
+
+    def test_e156_references_bayesian(self):
+        """E156 body must mention posterior or credible (Bayesian result in S4)."""
+        claim = {"country": "SA", "condition": "X",
+                 "audit_results": self._make_audit_results()}
+        r = E156Emitter().evaluate(claim)
+        body_lower = r["body"].lower()
+        assert "posterior" in body_lower or "credible" in body_lower, (
+            f"Expected 'posterior' or 'credible' in E156 body, got: {r['body']}"
+        )
+
+    def test_e156_references_grade(self):
+        """E156 body must mention certainty or a GRADE level (GRADE result in S5)."""
+        claim = {"country": "SA", "condition": "X",
+                 "audit_results": self._make_audit_results()}
+        r = E156Emitter().evaluate(claim)
+        body_lower = r["body"].lower()
+        grade_terms = ["certainty", "high", "moderate", "low", "very low"]
+        assert any(t in body_lower for t in grade_terms), (
+            f"Expected a GRADE term in E156 body, got: {r['body']}"
+        )
 
 
 # ═══════════════════════════ ORCHESTRATOR ═══════════════════════════════════
