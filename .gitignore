@@ -7,3 +7,11 @@ build/
 audit_ledger*.json
 AL_BURHAN_*.html
 .claude/
+
+# Sentinel pre-push hook output (auto-generated per session)
+STUCK_FAILURES.md
+STUCK_FAILURES.jsonl
+sentinel-findings.md
+sentinel-findings.jsonl
+review-findings.md
+review-findings.jsonl
