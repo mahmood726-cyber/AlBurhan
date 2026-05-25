@@ -1,12 +1,15 @@
 import logging
 import os
+from pathlib import Path
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
 # Path configurable via environment variable (ENG-P1-4)
-METAFRONTIER_PATH = os.environ.get('ALBURHAN_METAFRONTIER_PATH', r"C:\MetaFrontierLab")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_METAFRONTIER_PATH = REPO_ROOT.parent / "MetaFrontierLab"
+METAFRONTIER_PATH = os.environ.get('ALBURHAN_METAFRONTIER_PATH', str(DEFAULT_METAFRONTIER_PATH))
 
 
 class MetaFrontierEngine:
