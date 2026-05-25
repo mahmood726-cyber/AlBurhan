@@ -1,0 +1,25 @@
+[run]
+omit =
+    tests/*
+    */tests/*
+    conftest.py
+    */conftest.py
+    selenium_*_legacy.py
+    test_*_legacy.py
+    setup.py
+    */migrations/*
+    */node_modules/*
+    */.venv/*
+    */venv/*
+
+source =
+    .
+
+[report]
+ignore_errors = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
