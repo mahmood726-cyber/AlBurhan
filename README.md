@@ -1,5 +1,7 @@
 # Al-Burhan (The Proof)
 
+[![codeql](https://github.com/mahmood726-cyber/AlBurhan/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/mahmood726-cyber/AlBurhan/actions/workflows/codeql.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+
 **Al-Burhan** is the Universal Evidence Orchestrator. It acts as the nervous system connecting the specialized clinical evidence engines across the `C:` drive. 
 
 While individual tools like *Al-Mizan*, *PredictionGap*, *MetaFrontierLab*, and *GapFrontier* identify specific failure modes in the clinical translation pipeline, **Al-Burhan** unifies them into a single, multi-dimensional audit of medical claims.
