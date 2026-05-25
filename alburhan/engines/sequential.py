@@ -10,8 +10,9 @@ Implements:
 - Cumulative Z-statistic trajectory
 """
 
-import math
 import logging
+import math
+
 import numpy as np
 from scipy import stats
 

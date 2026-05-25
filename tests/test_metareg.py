@@ -10,10 +10,10 @@ Tests for MetaRegressionEngine — WLS meta-regression with Knapp-Hartung correc
   6. Homogeneous data gives R2 ≈ 0 (no variance to explain)
 """
 
-import pytest
 import numpy as np
-from alburhan.engines.metareg import MetaRegressionEngine
+import pytest
 
+from alburhan.engines.metareg import MetaRegressionEngine
 
 # ══════════════════════════════ FIXTURES ════════════════════════════════════
 

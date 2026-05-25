@@ -9,10 +9,11 @@ Tests for DoseResponseEngine — 6 tests covering all models and edge cases.
 6. Monotonic dose-response detected (slope > 0 when effects increase with dose)
 """
 
-import pytest
 import math
-from alburhan.engines.dose_response import DoseResponseEngine
 
+import pytest
+
+from alburhan.engines.dose_response import DoseResponseEngine
 
 # ══════════════════════════════ FIXTURES ════════════════════════════════════
 

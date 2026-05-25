@@ -1,15 +1,16 @@
 # sentinel:skip-file — hardcoded paths are fixture/registry/audit-narrative data for this repo's research workflow, not portable application configuration. Same pattern as push_all_repos.py and E156 workbook files.
-import logging
-import math
-import numpy as np
-from scipy import stats
-
+import logging
+import math
+
+import numpy as np
+from scipy import stats
+
 logger = logging.getLogger(__name__)
 
 
 class PredictionGapEngine:
     name = "PredictionGap"
-    
+
     def evaluate(self, claim_data):
         """
         Evaluate a claim based on CI/PI discordance.
@@ -18,13 +19,13 @@ class PredictionGapEngine:
         yi = np.array(claim_data.get('yi', []))
         logger.info("%s: evaluating k=%d studies", self.name, len(yi))
         sei = np.array(claim_data.get('sei', []))
-        
+
         if len(yi) < 3:
             return {"status": "error", "message": "At least 3 studies required for PI calculation."}
-            
+
         stats_result = self.compute_prediction_interval(yi, sei)
         discordance = self.classify_discordance(stats_result)
-        
+
         return {
             "status": "evaluated",
             "metrics": stats_result,
@@ -88,11 +89,11 @@ class PredictionGapEngine:
         null = 0.0
         ci_excludes_null = (result['ci_lo'] > null) or (result['ci_hi'] < null)
         pi_excludes_null = (result['pi_lo'] > null) or (result['pi_hi'] < null)
-        
+
         if ci_excludes_null and not pi_excludes_null:
             return 'FALSE_REASSURANCE'
-        elif ci_excludes_null and pi_excludes_null:
+        if ci_excludes_null and pi_excludes_null:
             return 'CONCORDANT_SIG'
-        elif not ci_excludes_null:
+        if not ci_excludes_null:
             return 'CONCORDANT_NS'
         return 'UNKNOWN'

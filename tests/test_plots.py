@@ -4,8 +4,7 @@ Tests for alburhan.plots SVG generators.
 All 8 required tests plus additional sanity checks.
 """
 
-import pytest
-from alburhan.plots import forest_plot, funnel_plot, cusum_plot, galbraith_plot
+from alburhan.plots import cusum_plot, forest_plot, funnel_plot, galbraith_plot
 
 
 class TestPlots:

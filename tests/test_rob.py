@@ -6,10 +6,9 @@ clean data assessment, graceful degradation on missing forensics, and
 n_high_risk_studies bounds.
 """
 
-import pytest
 import numpy as np
-from alburhan.engines.rob import RoB2Engine
 
+from alburhan.engines.rob import RoB2Engine
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 

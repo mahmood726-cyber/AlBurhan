@@ -1,10 +1,10 @@
-import logging
-import os
-import re
 import json
-import numpy as np
-import click
+import logging
+import re
 from pathlib import Path
+
+import click
+import numpy as np
 
 from alburhan.core.orchestrator import EvidenceOrchestrator
 from alburhan.reporting import generate_html_report
@@ -33,7 +33,6 @@ class AlBurhanEncoder(json.JSONEncoder):
 @click.group()
 def main():
     """Al-Burhan: Universal Evidence Orchestrator"""
-    pass
 
 
 @main.command()

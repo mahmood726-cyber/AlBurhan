@@ -10,10 +10,9 @@ Tests for BayesianMAEngine — Bayesian normal-normal hierarchical meta-analysis
   6. High heterogeneity data gives posterior_tau2 > 0
 """
 
-import numpy as np
 import pytest
-from alburhan.engines.bayesian import BayesianMAEngine
 
+from alburhan.engines.bayesian import BayesianMAEngine
 
 # ══════════════════════════════ FIXTURES ════════════════════════════════════
 

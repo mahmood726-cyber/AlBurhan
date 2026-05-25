@@ -124,11 +124,10 @@ class PRISMAEngine:
         engine_result = results.get(source, {})
         if engine_result.get("status") == "evaluated":
             return "YES", f"engine:{source}"
-        elif engine_result.get("status") in ("skipped", "error"):
+        if engine_result.get("status") in ("skipped", "error"):
             return "NO", f"engine:{source} (status={engine_result.get('status')})"
-        else:
-            # Engine not run or missing from results
-            return "NO", f"engine:{source} (not found in audit_results)"
+        # Engine not run or missing from results
+        return "NO", f"engine:{source} (not found in audit_results)"
 
     def _score_multi(self, results):
         """Item 13a: YES if >=3 synthesis engines are evaluated."""
@@ -136,7 +135,6 @@ class PRISMAEngine:
         n_evaluated = len(evaluated)
         if n_evaluated >= _SYNTHESIS_THRESHOLD:
             return "YES", f"MULTI ({n_evaluated}/{len(_SYNTHESIS_ENGINES)} synthesis engines evaluated)"
-        elif n_evaluated > 0:
+        if n_evaluated > 0:
             return "PARTIAL", f"MULTI ({n_evaluated}/{len(_SYNTHESIS_ENGINES)} synthesis engines evaluated)"
-        else:
-            return "NO", f"MULTI (0/{len(_SYNTHESIS_ENGINES)} synthesis engines evaluated)"
+        return "NO", f"MULTI (0/{len(_SYNTHESIS_ENGINES)} synthesis engines evaluated)"

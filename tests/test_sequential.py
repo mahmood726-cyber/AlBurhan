@@ -13,12 +13,12 @@ Tests for SequentialTSAEngine (Task 6).
 """
 
 import math
+
 import numpy as np
 import pytest
 from scipy import stats
 
 from alburhan.engines.sequential import SequentialTSAEngine
-
 
 # ─────────────────────────── helpers ────────────────────────────────────────
 

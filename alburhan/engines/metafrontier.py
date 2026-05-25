@@ -1,7 +1,7 @@
-import os
 import logging
+import os
+
 import pandas as pd
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class MetaFrontierEngine:
                 "control_events": claim_data["control_events"],
                 "control_total": claim_data["control_total"]
             })
-        elif "yi" in claim_data:
+        if "yi" in claim_data:
             return pd.DataFrame({
                 "yi": claim_data["yi"],
                 "sei": claim_data["sei"]

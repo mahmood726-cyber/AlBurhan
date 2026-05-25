@@ -9,6 +9,7 @@ Each method returns: theta, se, tau2, ci_lo, ci_hi (95% Wald CI).
 """
 
 import logging
+
 import numpy as np
 from scipy.optimize import brentq
 

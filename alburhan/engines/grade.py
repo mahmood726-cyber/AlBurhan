@@ -64,10 +64,9 @@ class GRADEEngine:
             n_high = rob2.get("n_high_risk_studies", 0)
             if overall == "High":
                 return -2, f"RoB2 overall_risk=High ({n_high} high-risk studies)"
-            elif overall == "Some Concerns":
-                return -1, f"RoB2 overall_risk=Some Concerns"
-            else:
-                return 0, "RoB2 overall_risk=Low"
+            if overall == "Some Concerns":
+                return -1, "RoB2 overall_risk=Some Concerns"
+            return 0, "RoB2 overall_risk=Low"
 
         # Fall back to RegistryForensics anomaly flags
         rf = results.get("RegistryForensics", {})
@@ -78,10 +77,9 @@ class GRADEEngine:
         flags = rf.get("anomaly_flags", 0)
         if flags == 0:
             return 0, "No anomaly flags"
-        elif flags == 1:
+        if flags == 1:
             return -1, f"{flags} anomaly flag detected (serious)"
-        else:
-            return -2, f"{flags} anomaly flags detected (very serious)"
+        return -2, f"{flags} anomaly flags detected (very serious)"
 
     # ── Domain 2: Inconsistency ───────────────────────────────────────────────
 
@@ -100,21 +98,19 @@ class GRADEEngine:
         if i2 is None:
             # Only have NetworkMeta
             if n_influential == 0:
-                return 0, f"No influential studies detected (I2 unavailable)"
-            elif n_influential == 1:
-                return -1, f"1 influential study detected (I2 unavailable)"
-            else:
-                return -2, f"{n_influential} influential studies detected (I2 unavailable)"
+                return 0, "No influential studies detected (I2 unavailable)"
+            if n_influential == 1:
+                return -1, "1 influential study detected (I2 unavailable)"
+            return -2, f"{n_influential} influential studies detected (I2 unavailable)"
 
         i2_label = f"I2={i2:.0f}%"
         inf_label = f"{n_influential} influential study" if n_influential == 1 else f"{n_influential} influential studies"
 
         if i2 > 75 or n_influential >= 2:
             return -2, f"{i2_label}, {inf_label} (very serious)"
-        elif i2 >= 25 or n_influential == 1:
+        if i2 >= 25 or n_influential == 1:
             return -1, f"{i2_label}, {inf_label} (serious)"
-        else:
-            return 0, f"{i2_label}, {inf_label} — no concern"
+        return 0, f"{i2_label}, {inf_label} — no concern"
 
     # ── Domain 3: Indirectness ────────────────────────────────────────────────
 
@@ -128,11 +124,10 @@ class GRADEEngine:
 
         if aligned is True:
             return 0, "Condition aligned with burden"
-        elif aligned is False:
+        if aligned is False:
             return -1, "Condition not aligned with regional burden"
-        else:
-            # None = unknown country
-            return -1, ba.get("reason", "Burden alignment data unavailable")
+        # None = unknown country
+        return -1, ba.get("reason", "Burden alignment data unavailable")
 
     # ── Domain 4: Imprecision ─────────────────────────────────────────────────
 
@@ -153,18 +148,16 @@ class GRADEEngine:
             # Only fragility data
             if is_fragile:
                 return -1, "FragilityAtlas: fragile (CI width unavailable)"
-            else:
-                return 0, "FragilityAtlas: not fragile (CI width unavailable)"
+            return 0, "FragilityAtlas: not fragile (CI width unavailable)"
 
         width_label = f"CI width {ci_width:.2f}"
         fragile_label = "fragile" if is_fragile else "not fragile"
 
         if ci_width > 1.0 and is_fragile:
             return -2, f"{width_label}, {fragile_label} (very serious)"
-        elif ci_width >= 0.5 or is_fragile:
+        if ci_width >= 0.5 or is_fragile:
             return -1, f"{width_label}, {fragile_label} (serious)"
-        else:
-            return 0, f"{width_label}, {fragile_label} — no concern"
+        return 0, f"{width_label}, {fragile_label} — no concern"
 
     # ── Domain 5: Publication Bias ────────────────────────────────────────────
 
@@ -182,12 +175,11 @@ class GRADEEngine:
 
         if egger_flagged and trim_flagged and n_missing >= 2:
             return -2, f"Egger flagged and trim-fill missing {n_missing} studies (very serious)"
-        elif egger_flagged or trim_flagged:
+        if egger_flagged or trim_flagged:
             reasons = []
             if egger_flagged:
                 reasons.append("Egger flagged")
             if trim_flagged:
                 reasons.append(f"trim-fill missing {n_missing} studies")
             return -1, "; ".join(reasons)
-        else:
-            return 0, "No bias detected"
+        return 0, "No bias detected"

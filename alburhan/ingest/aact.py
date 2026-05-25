@@ -2,12 +2,13 @@
 Local AACT (Aggregate Analysis of ClinicalTrials.gov) CSV parser.
 Reads from downloaded AACT data files.
 """
-import os
-import logging
 import csv
+import logging
+import os
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-from alburhan.ingest.parser import parse_effect, counts_to_yi_sei
+from typing import Any
+
+from alburhan.ingest.parser import parse_effect
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +21,15 @@ DEFAULT_AACT_DIR = os.environ.get(
 class AACTClient:
     """Parse trial data from local AACT CSV files."""
 
-    def __init__(self, data_dir: Optional[str] = None):
+    def __init__(self, data_dir: str | None = None):
         self.data_dir = Path(data_dir or DEFAULT_AACT_DIR)
 
     def build_claim_data(
         self,
         condition: str,
-        intervention: Optional[str] = None,
+        intervention: str | None = None,
         max_trials: int = 50,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Parse local AACT CSVs, extract results, build claim_data.
 
@@ -55,11 +56,11 @@ class AACTClient:
                 "message": f"No matching studies for {condition}",
             }
 
-        yi_list: List[float] = []
-        sei_list: List[float] = []
-        years_list: List[int] = []
-        n_list: List[int] = []
-        nct_ids: List[str] = []
+        yi_list: list[float] = []
+        sei_list: list[float] = []
+        years_list: list[int] = []
+        n_list: list[int] = []
+        nct_ids: list[str] = []
 
         if outcomes_path.exists():
             effects = self._parse_outcome_analyses(outcomes_path, matching_ncts)
@@ -91,15 +92,15 @@ class AACTClient:
         self,
         studies_path: Path,
         condition: str,
-        intervention: Optional[str],
+        intervention: str | None,
         max_trials: int,
-    ) -> Dict[str, Dict]:
+    ) -> dict[str, dict]:
         """Find NCT IDs matching condition (and optionally intervention) from studies.csv."""
-        matches: Dict[str, Dict] = {}
+        matches: dict[str, dict] = {}
         condition_lower = condition.lower()
         intervention_lower = intervention.lower() if intervention else None
 
-        with open(studies_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(studies_path, encoding="utf-8", errors="replace") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 status = (row.get("overall_status") or "").lower()
@@ -140,13 +141,13 @@ class AACTClient:
     def _parse_outcome_analyses(
         self,
         outcomes_path: Path,
-        matching_ncts: Dict[str, Dict],
-    ) -> List[Dict]:
+        matching_ncts: dict[str, dict],
+    ) -> list[dict]:
         """Extract effect sizes from outcome_analyses.csv for matching NCTs."""
-        results: List[Dict] = []
+        results: list[dict] = []
         seen_ncts: set = set()
 
-        with open(outcomes_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(outcomes_path, encoding="utf-8", errors="replace") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 nct_id = row.get("nct_id", "")

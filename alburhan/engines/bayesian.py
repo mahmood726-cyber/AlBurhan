@@ -23,6 +23,7 @@ Evidence classification: Kass & Raftery (1995).
 """
 
 import logging
+
 import numpy as np
 from scipy import stats
 
@@ -157,11 +158,10 @@ class BayesianMAEngine:
         """Kass & Raftery (1995) evidence classification for BF10."""
         if bf10 < 1.0:
             return "Evidence for H0"
-        elif bf10 < 3.0:
+        if bf10 < 3.0:
             return "Barely worth mentioning"
-        elif bf10 < 20.0:
+        if bf10 < 20.0:
             return "Positive"
-        elif bf10 < 150.0:
+        if bf10 < 150.0:
             return "Strong"
-        else:
-            return "Very strong"
+        return "Very strong"

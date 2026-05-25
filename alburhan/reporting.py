@@ -1,8 +1,7 @@
-import os
 from datetime import datetime
 from html import escape
 
-from alburhan.plots import forest_plot, funnel_plot, cusum_plot, galbraith_plot
+from alburhan.plots import cusum_plot, forest_plot, funnel_plot, galbraith_plot
 
 
 def generate_html_report(results, claim_id, country, condition, output_path=None):

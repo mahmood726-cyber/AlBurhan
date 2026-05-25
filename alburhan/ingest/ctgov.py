@@ -4,10 +4,11 @@ Searches for completed trials with results, extracts outcome measures.
 """
 import json
 import logging
-import urllib.request
 import urllib.parse
-from typing import List, Dict, Any, Optional
-from alburhan.ingest.parser import parse_effect, counts_to_yi_sei
+import urllib.request
+from typing import Any
+
+from alburhan.ingest.parser import parse_effect
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,8 @@ BASE_URL = "https://clinicaltrials.gov/api/v2"
 class CTGovClient:
     """Fetch trial data from ClinicalTrials.gov API v2."""
 
-    def search_trials(self, condition: str, intervention: Optional[str] = None,
-                      max_results: int = 50) -> List[Dict]:
+    def search_trials(self, condition: str, intervention: str | None = None,
+                      max_results: int = 50) -> list[dict]:
         """Search for completed trials with results."""
         params = {
             "query.cond": condition,
@@ -43,7 +44,7 @@ class CTGovClient:
             logger.error("CT.gov API error: %s", e)
             return []
 
-    def get_trial_results(self, nct_id: str) -> Optional[Dict]:
+    def get_trial_results(self, nct_id: str) -> dict | None:
         """Fetch detailed results for a specific trial."""
         url = (
             f"{BASE_URL}/studies/{nct_id}"
@@ -58,20 +59,20 @@ class CTGovClient:
             logger.error("Failed to fetch %s: %s", nct_id, e)
             return None
 
-    def build_claim_data(self, condition: str, intervention: Optional[str] = None,
-                         max_trials: int = 20) -> Dict[str, Any]:
+    def build_claim_data(self, condition: str, intervention: str | None = None,
+                         max_trials: int = 20) -> dict[str, Any]:
         """
         Search CT.gov, extract results, build claim_data for orchestrator.
         Returns dict with yi, sei, years, n_per_study, condition, etc.
         """
         studies = self.search_trials(condition, intervention, max_results=max_trials)
 
-        yi_list: List[float] = []
-        sei_list: List[float] = []
-        years_list: List[int] = []
-        n_list: List[int] = []
-        nct_ids: List[str] = []
-        titles: List[str] = []
+        yi_list: list[float] = []
+        sei_list: list[float] = []
+        years_list: list[int] = []
+        n_list: list[int] = []
+        nct_ids: list[str] = []
+        titles: list[str] = []
 
         for study in studies:
             nct_id = study.get("nct_id")
@@ -112,7 +113,7 @@ class CTGovClient:
             "titles": titles,
         }
 
-    def _parse_study_brief(self, study: Dict) -> Dict:
+    def _parse_study_brief(self, study: dict) -> dict:
         """Parse brief study info from search results."""
         proto = study.get("protocolSection", {})
         ident = proto.get("identificationModule", {})
@@ -135,9 +136,9 @@ class CTGovClient:
             "enrollment": enrollment or 100,
         }
 
-    def _extract_outcomes(self, detail: Dict) -> List[Dict]:
+    def _extract_outcomes(self, detail: dict) -> list[dict]:
         """Extract effect sizes from trial results."""
-        results: List[Dict] = []
+        results: list[dict] = []
         results_section = detail.get("resultsSection", {})
         outcome_module = results_section.get("outcomeMeasuresModule", {})
 

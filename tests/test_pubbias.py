@@ -14,8 +14,8 @@ Tests for PubBiasEngine — Publication Bias Detection Suite (6 methods).
 
 import numpy as np
 import pytest
-from alburhan.engines.pubbias import PubBiasEngine
 
+from alburhan.engines.pubbias import PubBiasEngine
 
 # ══════════════════════════════ FIXTURES ════════════════════════════════════
 

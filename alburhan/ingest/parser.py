@@ -5,6 +5,7 @@ Supports: Hazard Ratio, Odds Ratio, Risk Ratio, Mean Difference,
 Standardized Mean Difference.
 """
 import math
+
 from scipy import stats
 
 
@@ -56,11 +57,10 @@ def parse_effect(measure_type, value, ci_lo, ci_hi, **kwargs):
     measure_type = measure_type.upper().strip()
     if measure_type in ("HR", "HAZARD RATIO"):
         return hr_to_yi_sei(value, ci_lo, ci_hi)
-    elif measure_type in ("OR", "ODDS RATIO"):
+    if measure_type in ("OR", "ODDS RATIO"):
         return or_to_yi_sei(value, ci_lo, ci_hi)
-    elif measure_type in ("RR", "RISK RATIO", "RELATIVE RISK"):
+    if measure_type in ("RR", "RISK RATIO", "RELATIVE RISK"):
         return rr_to_yi_sei(value, ci_lo, ci_hi)
-    elif measure_type in ("MD", "MEAN DIFFERENCE", "DIFFERENCE"):
+    if measure_type in ("MD", "MEAN DIFFERENCE", "DIFFERENCE"):
         return md_to_yi_sei(value, ci_lo, ci_hi)
-    else:
-        return None, None  # Unknown type
+    return None, None  # Unknown type

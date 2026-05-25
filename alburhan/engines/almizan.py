@@ -1,12 +1,13 @@
 # sentinel:skip-file — hardcoded paths / templated placeholders are fixture/registry/audit-narrative data for this repo's research workflow, not portable application configuration. Same pattern as push_all_repos.py and E156 workbook files.
-import os
-import numpy as np
-import pandas as pd
-import math
-import logging
-from scipy import stats
-from pathlib import Path
-
+import logging
+import math
+import os
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+
 logger = logging.getLogger(__name__)
 
 class AlMizanEngine:

@@ -16,6 +16,7 @@ Requires claim_data to contain:
 
 import logging
 import math
+
 import numpy as np
 
 logger = logging.getLogger(__name__)

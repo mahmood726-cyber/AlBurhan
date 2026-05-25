@@ -10,7 +10,6 @@ All plots are:
 
 import math
 
-
 # ─── Colour palette (matches dark theme) ─────────────────────────────────────
 _C_TEXT = "#c9d1d9"
 _C_GRID = "#30363d"

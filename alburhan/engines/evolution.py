@@ -9,8 +9,8 @@ Computes from actual study data:
 """
 
 import logging
+
 import numpy as np
-from scipy import stats as sp_stats
 
 logger = logging.getLogger(__name__)
 

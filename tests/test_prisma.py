@@ -5,9 +5,7 @@ Tests for the PRISMA 2020 Compliance Engine.
 graceful degradation on missing upstreams, GRADE presence, and score bounds.
 """
 
-import pytest
 from alburhan.engines.prisma import PRISMAEngine
-
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 

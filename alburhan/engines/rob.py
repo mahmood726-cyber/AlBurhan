@@ -21,8 +21,8 @@ Reference:
 """
 
 import logging
+
 import numpy as np
-from scipy import stats as sp_stats
 
 logger = logging.getLogger(__name__)
 
@@ -101,16 +101,15 @@ class RoB2Engine:
 
         if grim_flagged and terminal_flagged:
             return "High", "GRIM test failed and terminal digit irregularity detected"
-        elif grim_flagged:
+        if grim_flagged:
             return "High", "GRIM test failed — reported proportions inconsistent with integer N"
-        elif terminal_flagged:
+        if terminal_flagged:
             return "Some Concerns", "Terminal digit irregularity detected"
-        elif flags >= 3:
+        if flags >= 3:
             return "High", f"{flags} forensic anomaly flags detected"
-        elif flags >= 1:
+        if flags >= 1:
             return "Some Concerns", f"{flags} forensic anomaly flag(s) detected"
-        else:
-            return "Low", "No randomization-related anomalies detected"
+        return "Low", "No randomization-related anomalies detected"
 
     # ── Domain 2: Deviations from interventions ───────────────────────────────
 
@@ -133,12 +132,11 @@ class RoB2Engine:
 
         if hom_flagged and low_cv:
             return "High", f"SE homogeneity flagged and CV={cv:.3f} (possible imputation)"
-        elif hom_flagged:
-            return "Some Concerns", f"SE homogeneity flagged (Cochran's C test significant)"
-        elif low_cv:
+        if hom_flagged:
+            return "Some Concerns", "SE homogeneity flagged (Cochran's C test significant)"
+        if low_cv:
             return "Some Concerns", f"SE CV={cv:.3f} (very low variation — possible imputation)"
-        else:
-            return "Low", f"No SE homogeneity flag; SE CV={cv:.3f}"
+        return "Low", f"No SE homogeneity flag; SE CV={cv:.3f}"
 
     # ── Domain 4: Measurement of outcome ─────────────────────────────────────
 
@@ -153,10 +151,9 @@ class RoB2Engine:
         if normality.get("flagged", False):
             p_val = normality.get("p_value", float("nan"))
             return "Some Concerns", f"Shapiro-Wilk normality flagged (p={p_val:.3f})"
-        else:
-            p_val = normality.get("p_value", float("nan"))
-            p_str = f"{p_val:.3f}" if not (isinstance(p_val, float) and np.isnan(p_val)) else "N/A"
-            return "Low", f"Shapiro-Wilk passed (p={p_str})"
+        p_val = normality.get("p_value", float("nan"))
+        p_str = f"{p_val:.3f}" if not (isinstance(p_val, float) and np.isnan(p_val)) else "N/A"
+        return "Low", f"Shapiro-Wilk passed (p={p_str})"
 
     # ── Domain 5: Selection of reported result ────────────────────────────────
 
@@ -174,14 +171,13 @@ class RoB2Engine:
 
         if egger_flagged and excess_flagged:
             return "High", "Egger test and excess significance test both flagged"
-        elif egger_flagged:
+        if egger_flagged:
             p_str = f"{egger_p:.3f}" if isinstance(egger_p, float) and not np.isnan(egger_p) else "N/A"
             return "Some Concerns", f"Egger test flagged (p={p_str})"
-        elif excess_flagged:
+        if excess_flagged:
             return "Some Concerns", "Excess significance test flagged"
-        else:
-            p_str = f"{egger_p:.3f}" if isinstance(egger_p, float) and not np.isnan(egger_p) else "N/A"
-            return "Low", f"No selection bias signals detected (Egger p={p_str})"
+        p_str = f"{egger_p:.3f}" if isinstance(egger_p, float) and not np.isnan(egger_p) else "N/A"
+        return "Low", f"No selection bias signals detected (Egger p={p_str})"
 
     # ── Per-study risk ────────────────────────────────────────────────────────
 

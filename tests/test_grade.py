@@ -6,9 +6,7 @@ VERY LOW certainty, publication bias, unknown alignment, missing engines,
 and score clamping.
 """
 
-import pytest
 from alburhan.engines.grade import GRADEEngine
-
 
 # ─── Helpers ────────────────────────────────────────────────────────────────
 

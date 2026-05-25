@@ -11,8 +11,8 @@ Tests for RobustMAEngine — 3 outlier-resistant meta-analysis estimators.
 """
 
 import pytest
-from alburhan.engines.robust import RobustMAEngine
 
+from alburhan.engines.robust import RobustMAEngine
 
 # ══════════════════════════════ FIXTURES ════════════════════════════════════
 

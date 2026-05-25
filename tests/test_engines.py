@@ -6,23 +6,22 @@ Tests cover: correctness, edge cases (k=1..3), mathematical validation.
 """
 
 import math
+
 import numpy as np
 import pytest
-from scipy import stats
 
-from alburhan.engines.predictiongap import PredictionGapEngine
-from alburhan.engines.fragility import FragilityEngine
+from alburhan.core.orchestrator import EvidenceOrchestrator
+from alburhan.engines.africarct import AfricaRCTEngine
+from alburhan.engines.almizan import AlMizanEngine
 from alburhan.engines.causalsynth import CausalSynthEngine
 from alburhan.engines.drift import EvidenceDriftEngine
-from alburhan.engines.almizan import AlMizanEngine
-from alburhan.engines.forensics import RegistryForensicsEngine
-from alburhan.engines.nma import NetworkMetaEngine
-from alburhan.engines.evolution import EvolutionEngine
-from alburhan.engines.synthesis import SynthesisLossEngine
-from alburhan.engines.africarct import AfricaRCTEngine
 from alburhan.engines.e156 import E156Emitter
-from alburhan.core.orchestrator import EvidenceOrchestrator
-
+from alburhan.engines.evolution import EvolutionEngine
+from alburhan.engines.forensics import RegistryForensicsEngine
+from alburhan.engines.fragility import FragilityEngine
+from alburhan.engines.nma import NetworkMetaEngine
+from alburhan.engines.predictiongap import PredictionGapEngine
+from alburhan.engines.synthesis import SynthesisLossEngine
 
 # ═══════════════════════════ FIXTURES ═══════════════════════════════════════
 

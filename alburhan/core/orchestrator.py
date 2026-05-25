@@ -1,33 +1,33 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
-from alburhan.engines.predictiongap import PredictionGapEngine
-from alburhan.engines.metafrontier import MetaFrontierEngine
-from alburhan.engines.almizan import AlMizanEngine
 from alburhan.engines.africarct import AfricaRCTEngine
-from alburhan.engines.fragility import FragilityEngine
-from alburhan.engines.evolution import EvolutionEngine
-from alburhan.engines.synthesis import SynthesisLossEngine
-from alburhan.engines.causalsynth import CausalSynthEngine
-from alburhan.engines.drift import EvidenceDriftEngine
-from alburhan.engines.forensics import RegistryForensicsEngine
-from alburhan.engines.nma import NetworkMetaEngine
+from alburhan.engines.almizan import AlMizanEngine
 from alburhan.engines.bayesian import BayesianMAEngine
-from alburhan.engines.robust import RobustMAEngine
-from alburhan.engines.pubbias import PubBiasEngine
-from alburhan.engines.metareg import MetaRegressionEngine
+from alburhan.engines.causalsynth import CausalSynthEngine
 from alburhan.engines.dose_response import DoseResponseEngine
-from alburhan.engines.sequential import SequentialTSAEngine
-from alburhan.engines.grade import GRADEEngine
+from alburhan.engines.drift import EvidenceDriftEngine
 from alburhan.engines.e156 import E156Emitter
+from alburhan.engines.evolution import EvolutionEngine
+from alburhan.engines.forensics import RegistryForensicsEngine
+from alburhan.engines.fragility import FragilityEngine
+from alburhan.engines.grade import GRADEEngine
+from alburhan.engines.metafrontier import MetaFrontierEngine
+from alburhan.engines.metareg import MetaRegressionEngine
+from alburhan.engines.nma import NetworkMetaEngine
+from alburhan.engines.predictiongap import PredictionGapEngine
 from alburhan.engines.prisma import PRISMAEngine
+from alburhan.engines.pubbias import PubBiasEngine
 from alburhan.engines.rob import RoB2Engine
+from alburhan.engines.robust import RobustMAEngine
+from alburhan.engines.sequential import SequentialTSAEngine
+from alburhan.engines.synthesis import SynthesisLossEngine
 
 logger = logging.getLogger(__name__)
 
 # Explicit dependency declarations (ENG-P1-2, ENG-P1-3)
 # engine_name -> list of engine names that must run before it
-ENGINE_DEPS: Dict[str, List[str]] = {
+ENGINE_DEPS: dict[str, list[str]] = {
     "AfricaRCT": ["PredictionGap"],
     "CausalSynth": ["MetaFrontierLab", "PredictionGap"],
     "SynthesisLoss": ["Al-Mizan"],
@@ -64,8 +64,8 @@ class EvidenceOrchestrator:
             PRISMAEngine()
         ]
 
-    def run_audit(self, claim_data: Dict[str, Any]) -> Dict[str, Any]:
-        results: Dict[str, Any] = {}
+    def run_audit(self, claim_data: dict[str, Any]) -> dict[str, Any]:
+        results: dict[str, Any] = {}
 
         for engine in self.engines:
             # Build engine-specific context (copy to avoid mutation — STAT-P1-5)
@@ -90,7 +90,7 @@ class EvidenceOrchestrator:
 
         return results
 
-    def _inject_dependencies(self, engine_name: str, ctx: Dict, results: Dict):
+    def _inject_dependencies(self, engine_name: str, ctx: dict, results: dict):
         """Inject upstream results into engine context based on declared deps."""
         # PredictionGap → AfricaRCT, CausalSynth (theta)
         if engine_name in ("AfricaRCT", "CausalSynth"):
