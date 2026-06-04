@@ -1,6 +1,13 @@
 """
 Local AACT (Aggregate Analysis of ClinicalTrials.gov) CSV parser.
 Reads from downloaded AACT data files.
+
+Directory resolution is delegated to the shared ``aact-kit`` package so AlBurhan
+participates in the portfolio-wide ``AACT_CSV_DIR`` discovery convention. The
+row-level parsing stays here as domain logic: it streams the CSVs with
+``csv.DictReader`` (early-exit at ``max_trials``) and relies on string-valued
+cells (blank -> ""), which a DataFrame load would turn into NaN and break.
+Install: ``pip install aact-kit`` (or ``pip install -e C:/Projects/aact-kit``).
 """
 import csv
 import logging
@@ -8,21 +15,46 @@ import os
 from pathlib import Path
 from typing import Any
 
+from aact_kit import AACTBackend, resolve_aact_location
+
 from alburhan.ingest.parser import parse_effect
 
 logger = logging.getLogger(__name__)
 
-# Default AACT data directory
-DEFAULT_AACT_DIR = os.environ.get(
-    "ALBURHAN_AACT_DIR", str(Path.home() / "ctgov_data")
-)
+
+def _resolve_data_dir(data_dir: str | None) -> str:
+    """Resolve the AACT CSV directory.
+
+    Precedence (backward compatible):
+    1. explicit ``data_dir`` argument
+    2. ``ALBURHAN_AACT_DIR`` env var
+    3. aact-kit shared discovery, but only if it resolves to a CSV directory
+       (AlBurhan reads CSVs; a TSV/zip/db snapshot isn't usable here)
+    4. ``~/ctgov_data`` default
+    """
+    if data_dir:
+        return data_dir
+    env = os.environ.get("ALBURHAN_AACT_DIR")
+    if env:
+        return env
+    try:
+        loc = resolve_aact_location()
+        if loc.backend is AACTBackend.CSV_DIR:
+            return loc.dsn_or_path
+    except RuntimeError:
+        pass
+    return str(Path.home() / "ctgov_data")
+
+
+# Default AACT data directory (no-arg, no-env case); kept for backward-compat imports.
+DEFAULT_AACT_DIR = _resolve_data_dir(None)
 
 
 class AACTClient:
     """Parse trial data from local AACT CSV files."""
 
     def __init__(self, data_dir: str | None = None):
-        self.data_dir = Path(data_dir or DEFAULT_AACT_DIR)
+        self.data_dir = Path(_resolve_data_dir(data_dir))
 
     def build_claim_data(
         self,
