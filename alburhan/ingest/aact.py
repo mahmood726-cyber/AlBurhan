@@ -7,7 +7,7 @@ participates in the portfolio-wide ``AACT_CSV_DIR`` discovery convention. The
 row-level parsing stays here as domain logic: it streams the CSVs with
 ``csv.DictReader`` (early-exit at ``max_trials``) and relies on string-valued
 cells (blank -> ""), which a DataFrame load would turn into NaN and break.
-Install: ``pip install aact-kit`` (or ``pip install -e C:/Projects/aact-kit``).
+Install: ``pip install aact-kit`` (or ``pip install -e`` from a local checkout).
 """
 import csv
 import logging
