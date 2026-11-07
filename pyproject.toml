@@ -9,7 +9,7 @@ description = "Universal Evidence Orchestrator"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "aact-kit>=0.1.0",
+    "aact-kit @ git+https://github.com/mahmood726-cyber/aact-kit@858a8bce3dc31fcf296b2aaaa8a8287e76480f46",
     "pandas>=2.0,<3",
     "numpy>=1.24,<3",
     "scipy>=1.10,<2",
